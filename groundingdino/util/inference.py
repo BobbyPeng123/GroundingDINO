@@ -36,7 +36,7 @@ def load_model(model_config_path: str, model_checkpoint_path: str, device: str =
     return model
 
 
-def load_image(image_path: str) -> Tuple[np.array, torch.Tensor]:
+def load_image(image_path) -> Tuple[np.array, torch.Tensor]:
     transform = T.Compose(
         [
             T.RandomResize([800], max_size=1333),
@@ -44,7 +44,7 @@ def load_image(image_path: str) -> Tuple[np.array, torch.Tensor]:
             T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
         ]
     )
-    image_source = Image.open(image_path).convert("RGB")
+    image_source = Image.open(image_path).convert("RGB") if isinstance(image_path, str) else image_path
     image = np.asarray(image_source)
     image_transformed, _ = transform(image_source, None)
     return image, image_transformed
@@ -76,6 +76,8 @@ def predict(
 
     tokenizer = model.tokenizer
     tokenized = tokenizer(caption)
+
+    # import ipdb; ipdb.set_trace()
     
     if remove_combined:
         sep_idx = [i for i in range(len(tokenized['input_ids'])) if tokenized['input_ids'][i] in [101, 102, 1012]]
@@ -93,6 +95,13 @@ def predict(
             for logit
             in logits
         ]
+
+    # only get boxes with confidence above threshold
+    # boxes = boxes[logits.max(dim=1)[0] > 0.2]
+    # logits = logits[logits.max(dim=1)[0] > 0.2]
+    # phrases = phrases[:len(boxes)]
+
+    # import ipdb; ipdb.set_trace()
 
     return boxes, logits.max(dim=1)[0], phrases
 
@@ -126,7 +135,7 @@ def annotate(image_source: np.ndarray, boxes: torch.Tensor, logits: torch.Tensor
     annotated_frame = cv2.cvtColor(image_source, cv2.COLOR_RGB2BGR)
     annotated_frame = bbox_annotator.annotate(scene=annotated_frame, detections=detections)
     annotated_frame = label_annotator.annotate(scene=annotated_frame, detections=detections, labels=labels)
-    return annotated_frame
+    return annotated_frame, xyxy
 
 
 # ----------------------------------------------------------------------------------------------------------------------
