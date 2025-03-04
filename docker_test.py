@@ -154,7 +154,7 @@ if __name__ == "__main__":
 # # IMAGE_PATH = "/data/bobby/vstar_bench/relative_position/sa_61594.jpg"
 # # IMAGE_PATH = "/home/aadhithya/bobby_wks/keyboard_guitar.png"
 # # IMAGE_PATH = "/data/robot_images/2023-09-13_09-38-59/8.jpg"
-# IMAGE_PATH = "/home/aadhithya/bobby_wks/P3PO/p3po/camera_0.jpg"
+# IMAGE_PATH = "/home/aadhithya/bobby_wks/cam1_robot_place_7p.png"
 # # IMAGE_PATH = "/home/aadhithya/bobby_wks/multiple_cups.png"
 # image = Image.open(IMAGE_PATH).convert("RGB")
 # # bgr = True
@@ -169,7 +169,7 @@ if __name__ == "__main__":
 # # cv2.imwrite("image.jpg", img)
 # # exit()
 # # TEXT_PROMPT = "chair . person . dog ."
-# TEXT_PROMPT = "green bottle"
+# TEXT_PROMPT = "robot"
 # BOX_TRESHOLD = 0.35
 # TEXT_TRESHOLD = 0.25
 
@@ -213,4 +213,4 @@ if __name__ == "__main__":
 # print(x1, y1, x2, y2)
 
 # cropped_image = image[y1:y2, x1:x2]
-# cv2.imwrite("cam4_robot_place_bottle_7p.jpg", cropped_image)
+# cv2.imwrite("cam1_robot_place_7p.jpg", cropped_image)
