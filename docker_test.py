@@ -10,6 +10,16 @@ import json
 import torch
 import numpy as np
 import supervision as sv
+import os
+
+# NEW helper
+def empty_response():
+    return {
+        "boxes": [],
+        "logits": [],
+        "phrases": [],
+        "annotated_frame": ""  # empty string is fine for "no image"
+    }
 
 
 def serialize_image(image):
@@ -57,9 +67,10 @@ def annotate(image_source: np.ndarray, boxes: torch.Tensor, logits: torch.Tensor
 
 def groundingdino_get_boxes(image_data, image_path, model, TEXT_PROMPT, BOX_TRESHOLD, TEXT_TRESHOLD):
     image = deserialize_image(image_data) if not image_path else image_path
-    # save image
+    # # save image
     # image_array = np.array(image)
     # cv2.imwrite("received_image.jpg", image_array)
+    # exit()
     image_source, image = load_image(image)
     boxes, logits, phrases = predict(
         model=model,
@@ -96,14 +107,35 @@ def main():
         image_data = request["image"]
         image_path = request["image_path"]
         TEXT_PROMPT = request["label"]
+        if image_path and not os.path.isfile(image_path):
+            socket.send_json(empty_response())
+            print(f"Invalid image_path: {image_path} -> empty response sent")
+            continue
+        if not image_path and not image_data:
+            socket.send_json(empty_response())
+            print("No image supplied -> empty response sent")
+            continue
+        # if TEXT_PROMPT == "bottle": TEXT_PROMPT = "orange bottle"
+        # if TEXT_PROMPT == "oven": TEXT_PROMPT = "green box"
+        # if TEXT_PROMPT == "basket": TEXT_PROMPT = "grey basket"
+        # if TEXT_PROMPT == "bread": TEXT_PROMPT = "yellow bread"
+        # if TEXT_PROMPT == "cup": TEXT_PROMPT = "grey cup"
+        # print("+++++++++++++++++++++++++++++++", TEXT_PROMPT)
         # image_data = deserialize_image(image_data)
 
         # Perform groundingdino on the image
-        boxes, logits, phrases, annotated_frame = groundingdino_get_boxes(image_data, image_path, model, TEXT_PROMPT, BOX_TRESHOLD, TEXT_TRESHOLD)
-
+        try:
+            boxes, logits, phrases, annotated_frame = groundingdino_get_boxes(image_data, image_path, model, TEXT_PROMPT, BOX_TRESHOLD, TEXT_TRESHOLD)
+        except Exception as e:
+            # Any failure in load/predict/annotate -> empty response
+            socket.send_json(empty_response())
+            print(f"Processing error: {e} -> empty response sent")
+            continue
         # x1, y1, x2, y2 = boxes[0]
         # x1, y1, x2, y2 = int(x1)-10, int(y1)-10, int(x2)+10, int(y2)+10
         # boxes = [[x1, y1, x2, y2]]
+        # logits = logits[0:1]  # Get the first box's logits
+        # phrases = phrases[0:1]  # Get the first box's phrase
         for box in boxes:
             x1, y1, x2, y2 = box
             x1, y1, x2, y2 = int(x1)-10, int(y1)-10, int(x2)+10, int(y2)+10
@@ -117,6 +149,8 @@ def main():
             box = [x1, y1, x2, y2]
 
         cv2.imwrite("annotated_image.jpg", annotated_frame)
+        import time
+        time.sleep(5)
 
         # cobvert tensor list to list
         confidence_list = logits.cpu().detach().numpy().tolist()
@@ -154,7 +188,7 @@ if __name__ == "__main__":
 # # IMAGE_PATH = "/data/bobby/vstar_bench/relative_position/sa_61594.jpg"
 # # IMAGE_PATH = "/home/aadhithya/bobby_wks/keyboard_guitar.png"
 # # IMAGE_PATH = "/data/robot_images/2023-09-13_09-38-59/8.jpg"
-# IMAGE_PATH = "/home/aadhithya/bobby_wks/cam1_robot_place_7p.png"
+# IMAGE_PATH = "/home/aadhithya/bobby_wks/output_image.jpg"
 # # IMAGE_PATH = "/home/aadhithya/bobby_wks/multiple_cups.png"
 # image = Image.open(IMAGE_PATH).convert("RGB")
 # # bgr = True
@@ -169,7 +203,7 @@ if __name__ == "__main__":
 # # cv2.imwrite("image.jpg", img)
 # # exit()
 # # TEXT_PROMPT = "chair . person . dog ."
-# TEXT_PROMPT = "robot"
+# TEXT_PROMPT = "yellow bread"
 # BOX_TRESHOLD = 0.35
 # TEXT_TRESHOLD = 0.25
 
@@ -213,4 +247,4 @@ if __name__ == "__main__":
 # print(x1, y1, x2, y2)
 
 # cropped_image = image[y1:y2, x1:x2]
-# cv2.imwrite("cam1_robot_place_7p.jpg", cropped_image)
+# cv2.imwrite("bread.jpg", cropped_image)

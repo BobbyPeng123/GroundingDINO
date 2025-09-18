@@ -144,3 +144,7 @@ grounding/version.py
 
 vis/
 tmp/
+# large weights (not tracked)
+weights/*.pth
+weights/*.pt
+weights/*.ckpt
