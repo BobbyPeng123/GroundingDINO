@@ -148,3 +148,8 @@ tmp/
 weights/*.pth
 weights/*.pt
 weights/*.ckpt
+
+# large weights (not tracked)
+weights/*.pth
+weights/*.pt
+weights/*.ckpt
